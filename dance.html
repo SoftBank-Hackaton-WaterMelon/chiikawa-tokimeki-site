@@ -17,7 +17,7 @@
       color: #fff;
     }
     .card {
-      width: min(820px, 94vw);
+      width: min(860px, 94vw);
       background: rgba(255,255,255,.10);
       border: 1px solid rgba(255,255,255,.25);
       border-radius: 22px;
@@ -31,7 +31,7 @@
     h1 { margin: 0 0 6px; font-weight: 900; }
     p { margin: 0 0 14px; opacity: .95; }
 
-    /* 화면 전체에 살짝 흔들리는 콘페티 */
+    /* 흔들리는 콘페티(배경) */
     .confetti {
       position: absolute; inset: 0; pointer-events: none; opacity: .8;
       background-image:
@@ -41,17 +41,43 @@
         radial-gradient(circle at 30% 25%, #a3e635 0 2px, transparent 3px),
         radial-gradient(circle at 60% 30%, #f472b6 0 2px, transparent 3px);
       animation: confetti 2s linear infinite alternate;
+      z-index: 0;
     }
     @keyframes confetti { from { transform: translateY(-5%); } to { transform: translateY(5%); } }
 
+    /* 스테이지 */
+    .stage-wrap { margin-top: 6px; perspective: 1200px; }
     .stage {
       position: relative; border-radius: 18px; overflow: hidden;
       border: 1px solid rgba(255,255,255,.24);
       box-shadow: 0 0 28px rgba(255,255,255,.15) inset;
       background: rgba(0,0,0,.12);
+      transform-style: preserve-3d;
+      transition: transform .12s ease;
+    }
+    /* 애니메이티드 보더 */
+    .stage::before {
+      content:""; position:absolute; inset:-2px; border-radius:20px;
+      background:
+        conic-gradient(from 0deg, #22d3ee, #a78bfa, #f472b6, #facc15, #22d3ee);
+      filter: blur(10px); opacity:.35; z-index:0;
+      animation: spin 8s linear infinite;
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      padding:2px;
+    }
+    @keyframes spin { to { transform: rotate(1turn); } }
+
+    /* 스포트라이트 */
+    .spot {
+      position:absolute; inset:-20% -10%; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(60% 60% at var(--mx,50%) var(--my,40%), rgba(255,255,255,.16), transparent 60%);
+      mix-blend-mode: screen;
+      transition: background-position .1s ease;
     }
 
-    /* 느리게 떨어지는 꽃잎 (스테이지 내부에만) */
+    /* 꽃잎 */
     .petals { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
     .petal {
       position: absolute; top: -10vh; z-index: 2;
@@ -79,6 +105,7 @@
       to   { translate: var(--sway-x, 32px) 8px; }
     }
 
+    /* 메인 이미지 */
     .img {
       position: relative; z-index: 1;
       display: block; width: 100%; height: auto; transform-origin: 50% 90%;
@@ -92,8 +119,9 @@
       75%  { transform: translateY(-6px) rotate(2deg) scale(1.02); }
       100% { transform: translateY(0) rotate(0deg) scale(1.00); }
     }
+    .party .img { animation-duration: .9s; } /* 파티 모드 가속 */
 
-    /* 작은 자막(다크 배경용) */
+    /* 자막 */
     .subtitle {
       position: absolute; left: 12px; bottom: 12px; z-index: 3;
       background: rgba(0,0,0,.45);
@@ -106,50 +134,83 @@
       backdrop-filter: blur(4px);
     }
 
-    /* 모션 최소화 선호 시 애니메이션 끄기 */
-    @media (prefers-reduced-motion: reduce) {
-      .img, .confetti, .petal { animation: none !important; }
+    /* 비주얼라이저 */
+    #viz {
+      position:absolute; left:0; right:0; bottom:0; height:54px; z-index:1;
+      opacity:.9; mix-blend-mode:screen;
     }
 
-    .controls { margin-top: 14px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    button {
+    /* 모션 최소화 */
+    @media (prefers-reduced-motion: reduce) {
+      .img, .confetti, .petal, .stage::before { animation: none !important; }
+    }
+
+    .controls { margin-top: 14px; display: grid; gap: 10px; justify-content: center; }
+    .rows { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    button, .chip {
       appearance: none; border: 1px solid rgba(255,255,255,.35); color: #000;
       background: #22d3ee; border-radius: 999px; padding: 10px 16px; cursor: pointer;
       transition: transform .05s ease, background .2s ease, border-color .2s ease;
+      font-weight:700;
     }
-    button:hover { background: #67e8f9; }
-    button:active { transform: translateY(1px); }
+    button:hover, .chip:hover { background: #67e8f9; }
+    button:active, .chip:active { transform: translateY(1px); }
     #status { font-size: .95rem; opacity: .95; color: #fff; }
+    input[type="range"]{ width:min(420px,70vw); accent-color:#22d3ee; }
+    .chip { background: rgba(34,211,238,.18); color:#fff; border-color: rgba(255,255,255,.28); }
+
+    .footer { opacity:.9; font-size:.9rem; margin-top:6px; }
+
   </style>
 </head>
 <body>
-  <main class="card">
+  <main class="card" id="root">
     <div class="confetti" aria-hidden="true"></div>
     <h1>ちいかわ、わくわくな一日！ 🎉</h1>
 
-    <div class="stage" aria-label="춤추는 치이카와 이미지">
-      <!-- 꽃잎 레이어 -->
-      <div class="petals" aria-hidden="true"></div>
+    <div class="stage-wrap">
+      <div class="stage" id="stage" aria-label="춤추는 치이카와 이미지">
+        <div class="spot" aria-hidden="true"></div>
 
-      <!-- 메인 이미지 -->
-      <img
-        class="img"
-        src="assets/dance.gif"
-        alt="ちいかわ、わくわくな一日！"
-        loading="eager"
-        onerror="this.onerror=null;
-             this.src='assets/dance.jpg';
-             this.onerror=function(){ this.src='assets/dance.png'; };"
-      />
+        <!-- 꽃잎 -->
+        <div class="petals" aria-hidden="true"></div>
 
-      <!-- 작은 자막 -->
-      <span class="subtitle" aria-live="polite">今日はじしんをもって！ ✨</span>
+        <!-- 메인 이미지 -->
+        <img
+          class="img"
+          src="assets/dance.gif"
+          alt="ちいかわ、わくわくな一日！"
+          loading="eager"
+          onerror="this.onerror=null;
+               this.src='assets/dance.jpg';
+               this.onerror=function(){ this.src='assets/dance.png'; };"
+        />
+
+        <!-- 비주얼라이저 캔버스 -->
+        <canvas id="viz" width="1200" height="200" aria-hidden="true"></canvas>
+
+        <!-- 자막 (순환) -->
+        <span class="subtitle" id="subtitle" aria-live="polite">今日はじしんをもって！ ✨</span>
+      </div>
     </div>
 
-    <div class="controls" role="group" aria-label="오디오 제어">
-      <button id="play" aria-label="배경음악 재생">음악 켜기 ▶</button>
-      <button id="pause" aria-label="배경음악 일시정지">일시정지 ⏸</button>
-      <span id="status" aria-live="polite">정지됨</span>
+    <div class="controls" role="group" aria-label="오디오 및 효과 제어">
+      <div class="rows">
+        <button id="play" aria-label="배경음악 재생">▶ 음악 켜기</button>
+        <button id="pause" aria-label="배경음악 일시정지">⏸ 일시정지</button>
+        <button id="toggleParty" class="chip" aria-pressed="false">🎈 파티 모드</button>
+        <button id="togglePetals" class="chip" aria-pressed="true">🌸 꽃비 ON</button>
+      </div>
+
+      <input id="seek" type="range" min="0" max="1000" value="0" aria-label="재생 위치" />
+      <div class="rows">
+        <label class="chip" style="padding:8px 12px;">
+          🔊 볼륨
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" style="vertical-align:middle; width:160px; margin-left:8px;" />
+        </label>
+        <span id="status">정지됨</span>
+      </div>
+      <div class="footer">단축키: Space(재생/일시정지), ←/→(5초 이동), ↑/↓(볼륨)</div>
     </div>
 
     <audio id="bgm" preload="auto" loop>
@@ -160,42 +221,194 @@
   </main>
 
   <script>
-    // ===== 오디오 제어 =====
-    const audio = document.getElementById('bgm');
+    // ===== 엘리먼트 =====
+    const audio    = document.getElementById('bgm');
     const statusEl = document.getElementById('status');
+    const seek     = document.getElementById('seek');
+    const vol      = document.getElementById('vol');
+    const playBtn  = document.getElementById('play');
+    const pauseBtn = document.getElementById('pause');
+    const stage    = document.getElementById('stage');
+    const petalsLayer = document.querySelector('.petals');
+    const togglePartyBtn = document.getElementById('toggleParty');
+    const togglePetalsBtn= document.getElementById('togglePetals');
+    const subtitle = document.getElementById('subtitle');
+    const spot     = document.querySelector('.spot');
+    const root     = document.getElementById('root');
 
-    document.getElementById('play').addEventListener('click', async () => {
-      try { await audio.play(); statusEl.textContent = '재생 중'; }
-      catch { statusEl.textContent = '재생 실패(첫 상호작용 필요/파일 없음)'; }
+    // ===== 기본 상태 & 로컬 저장 =====
+    const saved = JSON.parse(localStorage.getItem('chii:state') || '{}');
+    audio.volume = saved.volume ?? 0.8;
+    vol.value = audio.volume;
+    let party = !!saved.party;
+    document.body.classList.toggle('party', party);
+    togglePartyBtn.setAttribute('aria-pressed', party);
+    let petalsOn = saved.petalsOn ?? true;
+    togglePetalsBtn.setAttribute('aria-pressed', petalsOn);
+    petalsLayer.style.display = petalsOn ? '' : 'none';
+
+    // ===== 오디오 제어 =====
+    const updateStatus = (txt) => statusEl.textContent = txt;
+
+    playBtn.addEventListener('click', async () => {
+      try { await audio.play(); updateStatus('재생 중'); } 
+      catch { updateStatus('재생 실패(첫 상호작용 필요/파일 없음)'); }
     });
-    document.getElementById('pause').addEventListener('click', () => {
-      audio.pause(); statusEl.textContent = '일시정지';
-    });
+    pauseBtn.addEventListener('click', () => { audio.pause(); updateStatus('일시정지'); });
+
     document.addEventListener('pointerdown', async () => {
-      if (audio.paused) { try { await audio.play(); statusEl.textContent = '재생 중'; } catch {} }
+      if (audio.paused) { try { await audio.play(); updateStatus('재생 중'); } catch {} }
     }, { once: true });
 
-    // ===== 꽃잎 생성 (느리게 낙하) =====
-    const petalsLayer = document.querySelector('.petals');
-    const PETAL_COUNT = 16; // 12~24 추천
+    vol.addEventListener('input', () => {
+      audio.volume = Number(vol.value);
+      persist();
+    });
 
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) seek.value = Math.floor((audio.currentTime / audio.duration) * 1000);
+    });
+    seek.addEventListener('input', () => {
+      if (audio.duration) audio.currentTime = (seek.value / 1000) * audio.duration;
+    });
+
+    // ===== 단축키 =====
+    document.addEventListener('keydown', (e) => {
+      if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+      if (e.code === 'Space') { e.preventDefault(); audio.paused ? audio.play() : audio.pause(); }
+      if (e.code === 'ArrowLeft')  audio.currentTime = Math.max(0, audio.currentTime - 5);
+      if (e.code === 'ArrowRight') audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
+      if (e.code === 'ArrowUp')    { audio.volume = Math.min(1, audio.volume + 0.05); vol.value = audio.volume; persist(); }
+      if (e.code === 'ArrowDown')  { audio.volume = Math.max(0, audio.volume - 0.05); vol.value = audio.volume; persist(); }
+    });
+
+    // ===== 파티 모드 / 꽃잎 토글 =====
+    togglePartyBtn.addEventListener('click', () => {
+      party = !party;
+      document.body.classList.toggle('party', party);
+      togglePartyBtn.setAttribute('aria-pressed', party);
+      PETAL_COUNT = party ? 28 : 16;
+      spawnPetals(true);
+      persist();
+    });
+
+    togglePetalsBtn.addEventListener('click', () => {
+      petalsOn = !petalsOn;
+      togglePetalsBtn.setAttribute('aria-pressed', petalsOn);
+      petalsLayer.style.display = petalsOn ? '' : 'none';
+      persist();
+    });
+
+    // ===== 꽃잎 생성 =====
     const rnd = (min, max) => Math.random() * (max - min) + min;
+    let PETAL_COUNT = party ? 28 : 16;
 
-    for (let i = 0; i < PETAL_COUNT; i++) {
-      const p = document.createElement('span');
-      p.className = 'petal';
-
-      // 각 꽃잎에 랜덤 파라미터 부여
-      p.style.left = rnd(0, 100) + 'vw';
-      p.style.setProperty('--fall-dur',  rnd(7, 13) + 's');
-      p.style.setProperty('--fall-delay', rnd(-7, 0) + 's');
-      p.style.setProperty('--sway-dur',  rnd(2.8, 5.2) + 's');
-      p.style.setProperty('--sway-delay', rnd(0, 2) + 's');
-      p.style.setProperty('--sway-x',    rnd(18, 44) + 'px');
-      p.style.setProperty('--rot',       rnd(-40, 40) + 'deg');
-
-      petalsLayer.appendChild(p);
+    function spawnPetals(reset=false){
+      if (reset) petalsLayer.innerHTML = '';
+      for (let i = 0; i < PETAL_COUNT; i++) {
+        const p = document.createElement('span');
+        p.className = 'petal';
+        p.style.left = rnd(0, 100) + 'vw';
+        const speed = party ? rnd(5, 10) : rnd(7, 13);
+        p.style.setProperty('--fall-dur',  speed + 's');
+        p.style.setProperty('--fall-delay', rnd(-speed, 0) + 's');
+        p.style.setProperty('--sway-dur',  rnd(2.4, 5.0) + 's');
+        p.style.setProperty('--sway-delay', rnd(0, 2) + 's');
+        p.style.setProperty('--sway-x',    rnd(18, 44) + 'px');
+        p.style.setProperty('--rot',       rnd(-40, 40) + 'deg');
+        petalsLayer.appendChild(p);
+      }
     }
+    spawnPetals();
+
+    // ===== 마우스 스포트라이트 & 틸트 =====
+    stage.addEventListener('pointermove', (e) => {
+      const rect = stage.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width * 100;
+      const y = (e.clientY - rect.top) / rect.height * 100;
+      spot.style.setProperty('--mx', x + '%');
+      spot.style.setProperty('--my', y + '%');
+
+      const rx = (0.5 - y/100) * 6;  // X축 기울기
+      const ry = (x/100 - 0.5) * 6;  // Y축 기울기
+      stage.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    });
+    stage.addEventListener('pointerleave', () => {
+      stage.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    });
+
+    // ===== 자막 로테이션 =====
+    const lines = [
+      "今日はじしんをもって！ ✨",
+      "ちいかわ、わくわく！ 💫",
+      "오늘도 설레는 하루가 될 거야! 🌸",
+      "自分を信じて、ファイト！ 💪",
+      "작은 한 걸음, 큰 기쁨 ✨"
+    ];
+    let li = saved.subtitleIndex ?? 0;
+    function rotateSubtitle(){
+      li = (li + 1) % lines.length;
+      subtitle.textContent = lines[li];
+      persist();
+    }
+    setInterval(rotateSubtitle, 3200);
+
+    // ===== 웹오디오 비주얼라이저 =====
+    const canvas = document.getElementById('viz');
+    const ctx = canvas.getContext('2d');
+    let audioCtx, analyser, src, dataArray;
+
+    function setupAudioGraph(){
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      src = audioCtx.createMediaElementSource(audio);
+      src.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      drawViz();
+    }
+
+    function drawViz(){
+      requestAnimationFrame(drawViz);
+      if (!analyser) return;
+      analyser.getByteFrequencyData(dataArray);
+      const w = canvas.width = canvas.clientWidth * devicePixelRatio;
+      const h = canvas.height = 100 * devicePixelRatio;
+      const barW = Math.max(2, Math.floor(w / dataArray.length));
+      ctx.clearRect(0,0,w,h);
+      for (let i=0;i<dataArray.length;i++){
+        const v = dataArray[i]/255;
+        const barH = v * h;
+        const x = i * barW;
+        const y = h - barH;
+        // 밝은 그라데이션(섞임 모드 screen)
+        const grad = ctx.createLinearGradient(0,y,0,h);
+        grad.addColorStop(0, 'rgba(34,211,238,.95)');
+        grad.addColorStop(1, 'rgba(236,72,153,.85)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, y, barW*0.8, barH);
+      }
+    }
+
+    // 첫 재생 시 오디오 그래프 init
+    audio.addEventListener('play', () => { try { setupAudioGraph(); audioCtx && audioCtx.resume(); } catch {} });
+
+    // ===== 상태 저장 =====
+    function persist(){
+      localStorage.setItem('chii:state', JSON.stringify({
+        volume: audio.volume,
+        party,
+        petalsOn,
+        subtitleIndex: li
+      }));
+    }
+
+    // 초기 접근성 상태 표시
+    audio.addEventListener('play',  () => updateStatus('재생 중'));
+    audio.addEventListener('pause', () => updateStatus('일시정지'));
+    audio.addEventListener('ended', () => updateStatus('정지됨'));
   </script>
 </body>
 </html>
