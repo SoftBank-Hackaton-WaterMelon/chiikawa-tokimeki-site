@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>치이카와 · 댄스 파티</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100svh; display: grid; place-items: center;
+      background:
+        radial-gradient(1100px 540px at 12% 10%, #22c55e22, transparent),
+        radial-gradient(900px 520px at 88% 18%, #3b82f622, transparent),
+        linear-gradient(135deg, #3b82f6, #ec4899);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      color: #fff;
+    }
+    .card {
+      width: min(820px, 94vw);
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    h1 { margin: 0 0 6px; font-weight: 900; }
+    p { margin: 0 0 14px; opacity: .95; }
+
+    /* 화면 전체에 살짝 흔들리는 콘페티 */
+    .confetti {
+      position: absolute; inset: 0; pointer-events: none; opacity: .8;
+      background-image:
+        radial-gradient(circle at 10% 10%, #fff 0 2px, transparent 3px),
+        radial-gradient(circle at 50% 20%, #facc15 0 2px, transparent 3px),
+        radial-gradient(circle at 80% 10%, #22d3ee 0 2px, transparent 3px),
+        radial-gradient(circle at 30% 25%, #a3e635 0 2px, transparent 3px),
+        radial-gradient(circle at 60% 30%, #f472b6 0 2px, transparent 3px);
+      animation: confetti 2s linear infinite alternate;
+    }
+    @keyframes confetti { from { transform: translateY(-5%); } to { transform: translateY(5%); } }
+
+    .stage {
+      position: relative; border-radius: 18px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,.24);
+      box-shadow: 0 0 28px rgba(255,255,255,.15) inset;
+      background: rgba(0,0,0,.12);
+    }
+
+    /* 느리게 떨어지는 꽃잎 (스테이지 내부에만) */
+    .petals { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+    .petal {
+      position: absolute; top: -10vh; z-index: 2;
+      width: 14px; height: 12px;
+      background: radial-gradient(ellipse at 60% 40%, #f9a8d4 0%, #f472b6 60%, #ec4899 100%);
+      border-radius: 60% 60% 60% 60% / 70% 70% 40% 40%;
+      opacity: .95;
+      filter: drop-shadow(0 4px 6px rgba(236,72,153,.35));
+      transform: rotate(var(--rot));
+      animation: fall linear var(--fall-dur) var(--fall-delay) both,
+                 sway ease-in-out var(--sway-dur) var(--sway-delay) infinite alternate;
+    }
+    .petal::after{
+      content:"";
+      position:absolute; inset: 2px 4px auto auto;
+      width: 6px; height: 4px; border-radius: 50%;
+      background: rgba(255,255,255,.55);
+      transform: rotate(-20deg);
+    }
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(calc(var(--rot) + 160deg)); }
+    }
+    @keyframes sway {
+      from { translate: 0 0; }
+      to   { translate: var(--sway-x, 32px) 8px; }
+    }
+
+    .img {
+      position: relative; z-index: 1;
+      display: block; width: 100%; height: auto; transform-origin: 50% 90%;
+      animation: dance 1.2s ease-in-out infinite;
+      image-rendering: -webkit-optimize-contrast;
+    }
+    @keyframes dance {
+      0%   { transform: translateY(0) rotate(0deg) scale(1.00); }
+      25%  { transform: translateY(-6px) rotate(-2deg) scale(1.02); }
+      50%  { transform: translateY(0) rotate(0deg) scale(1.00); }
+      75%  { transform: translateY(-6px) rotate(2deg) scale(1.02); }
+      100% { transform: translateY(0) rotate(0deg) scale(1.00); }
+    }
+
+    /* 작은 자막(다크 배경용) */
+    .subtitle {
+      position: absolute; left: 12px; bottom: 12px; z-index: 3;
+      background: rgba(0,0,0,.45);
+      color: #fff; font-weight: 700; font-size: .95rem; letter-spacing: -.01em;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 999px;
+      padding: 8px 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.35);
+      user-select: none;
+      backdrop-filter: blur(4px);
+    }
+
+    /* 모션 최소화 선호 시 애니메이션 끄기 */
+    @media (prefers-reduced-motion: reduce) {
+      .img, .confetti, .petal { animation: none !important; }
+    }
+
+    .controls { margin-top: 14px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    button {
+      appearance: none; border: 1px solid rgba(255,255,255,.35); color: #000;
+      background: #22d3ee; border-radius: 999px; padding: 10px 16px; cursor: pointer;
+      transition: transform .05s ease, background .2s ease, border-color .2s ease;
+    }
+    button:hover { background: #67e8f9; }
+    button:active { transform: translateY(1px); }
+    #status { font-size: .95rem; opacity: .95; color: #fff; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="confetti" aria-hidden="true"></div>
+    <h1>ちいかわ、わくわくな一日！ 🎉</h1>
+
+    <div class="stage" aria-label="춤추는 치이카와 이미지">
+      <!-- 꽃잎 레이어 -->
+      <div class="petals" aria-hidden="true"></div>
+
+      <!-- 메인 이미지 -->
+      <img
+        class="img"
+        src="assets/dance.gif"
+        alt="ちいかわ、わくわくな一日！"
+        loading="eager"
+        onerror="this.onerror=null;
+             this.src='assets/dance.jpg';
+             this.onerror=function(){ this.src='assets/dance.png'; };"
+      />
+
+      <!-- 작은 자막 -->
+      <span class="subtitle" aria-live="polite">今日はじしんをもって！ ✨</span>
+    </div>
+
+    <div class="controls" role="group" aria-label="오디오 제어">
+      <button id="play" aria-label="배경음악 재생">음악 켜기 ▶</button>
+      <button id="pause" aria-label="배경음악 일시정지">일시정지 ⏸</button>
+      <span id="status" aria-live="polite">정지됨</span>
+    </div>
+
+    <audio id="bgm" preload="auto" loop>
+      <source src="assets/dance.mp3" type="audio/mpeg" />
+      <source src="assets/dance.m4a" type="audio/mp4" />
+      <source src="assets/dance.ogg" type="audio/ogg" />
+    </audio>
+  </main>
+
+  <script>
+    // ===== 오디오 제어 =====
+    const audio = document.getElementById('bgm');
+    const statusEl = document.getElementById('status');
+
+    document.getElementById('play').addEventListener('click', async () => {
+      try { await audio.play(); statusEl.textContent = '재생 중'; }
+      catch { statusEl.textContent = '재생 실패(첫 상호작용 필요/파일 없음)'; }
+    });
+    document.getElementById('pause').addEventListener('click', () => {
+      audio.pause(); statusEl.textContent = '일시정지';
+    });
+    document.addEventListener('pointerdown', async () => {
+      if (audio.paused) { try { await audio.play(); statusEl.textContent = '재생 중'; } catch {} }
+    }, { once: true });
+
+    // ===== 꽃잎 생성 (느리게 낙하) =====
+    const petalsLayer = document.querySelector('.petals');
+    const PETAL_COUNT = 16; // 12~24 추천
+
+    const rnd = (min, max) => Math.random() * (max - min) + min;
+
+    for (let i = 0; i < PETAL_COUNT; i++) {
+      const p = document.createElement('span');
+      p.className = 'petal';
+
+      // 각 꽃잎에 랜덤 파라미터 부여
+      p.style.left = rnd(0, 100) + 'vw';
+      p.style.setProperty('--fall-dur',  rnd(7, 13) + 's');
+      p.style.setProperty('--fall-delay', rnd(-7, 0) + 's');
+      p.style.setProperty('--sway-dur',  rnd(2.8, 5.2) + 's');
+      p.style.setProperty('--sway-delay', rnd(0, 2) + 's');
+      p.style.setProperty('--sway-x',    rnd(18, 44) + 'px');
+      p.style.setProperty('--rot',       rnd(-40, 40) + 'deg');
+
+      petalsLayer.appendChild(p);
+    }
+  </script>
+</body>
+</html>

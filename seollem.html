@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>치이카와 · 설렘</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100svh; display: grid; place-items: center;
+      background: linear-gradient(180deg, #fce7f3 0%, #f9a8d4 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      color: #4b5563;
+    }
+    .card {
+      width: min(720px, 92vw);
+      background: rgba(255,255,255,0.86);
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.10);
+      text-align: center;
+      position: relative;
+    }
+    h1 { margin: 0 0 6px; font-weight: 800; color: #db2777; letter-spacing: -.02em; }
+    p { margin: 0 0 14px; }
+
+    .frame {
+      position: relative; overflow: hidden; border-radius: 18px;
+      border: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 0 24px rgba(219,39,119,.20);
+      background: #fff;
+    }
+    .img { display: block; width: 100%; height: auto; }
+
+    /* 작은 자막(캡션) */
+    .subtitle {
+      position: absolute; left: 12px; bottom: 12px;
+      background: rgba(255,255,255,.85);
+      color: #db2777; font-weight: 700; font-size: .95rem; letter-spacing: -.01em;
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 999px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 12px rgba(219,39,119,.15);
+      user-select: none;
+    }
+
+    /* 꽃잎 레이어 */
+    .petals {
+      pointer-events: none;
+      position: absolute; inset: 0;
+      overflow: hidden;
+    }
+    .petal {
+      position: absolute; top: -10vh;
+      width: 14px; height: 12px;
+      background: radial-gradient(ellipse at 60% 40%, #f9a8d4 0%, #f472b6 60%, #ec4899 100%);
+      border-radius: 60% 60% 60% 60% / 70% 70% 40% 40%;
+      opacity: .9;
+      filter: drop-shadow(0 4px 6px rgba(219,39,119,.25));
+      animation: fall linear var(--fall-dur) var(--fall-delay) both,
+                 sway ease-in-out var(--sway-dur) var(--sway-delay) infinite alternate;
+      transform: rotate(var(--rot));
+    }
+    /* 꽃잎의 하이라이트 */
+    .petal::after{
+      content:"";
+      position:absolute; inset: 2px 4px auto auto;
+      width: 6px; height: 4px; border-radius: 50%;
+      background: rgba(255,255,255,.55);
+      transform: rotate(-20deg);
+    }
+
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(calc(var(--rot) + 160deg)); }
+    }
+    @keyframes sway {
+      from { translate: 0 0; }
+      to   { translate: var(--sway-x, 32px) 6px; }
+    }
+
+    /* 모션 최소화 선호 시 애니메이션 끄기 */
+    @media (prefers-reduced-motion: reduce) {
+      .petal { animation: none; }
+    }
+
+    .controls { margin-top: 14px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    button {
+      appearance: none; border: 0; color: #fff; background: #ec4899;
+      border-radius: 999px; padding: 10px 16px; cursor: pointer;
+      transition: transform .05s ease, background .2s ease;
+    }
+    button:hover { background: #db2777; }
+    button:active { transform: translateY(1px); }
+    #status { font-size: .95rem; opacity: .85; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>ちいかわのドキドキな一日 🌸</h1>
+
+    <div class="frame" aria-label="설레는 치이카와 이미지">
+      <!-- 꽃잎 레이어 -->
+      <div class="petals" aria-hidden="true"></div>
+
+      <!-- 메인 이미지 -->
+      <img
+        class="img"
+        src="assets/seollem.gif"
+        alt="ちいかわのドキドキな一日"
+        onerror="this.onerror=null; this.src='assets/seollem.jpg'; this.onerror=function(){ this.src='assets/seollem.png'; };"
+      />
+
+      <!-- 작은 자막 -->
+      <span class="subtitle" aria-live="polite">今日もときめく一日になるよ！</span>
+    </div>
+
+    <div class="controls" role="group" aria-label="오디오 제어">
+      <button id="play">음악 켜기 ▶</button>
+      <button id="pause">일시정지 ⏸</button>
+      <span id="status">정지됨</span>
+    </div>
+
+    <audio id="bgm" preload="auto" loop>
+      <source src="assets/seollem.mp3" type="audio/mpeg" />
+      <source src="assets/seollem.m4a" type="audio/mp4" />
+      <source src="assets/seollem.ogg" type="audio/ogg" />
+    </audio>
+  </main>
+
+  <script>
+    // ===== 오디오 제어 =====
+    const audio = document.getElementById('bgm');
+    const statusEl = document.getElementById('status');
+
+    document.getElementById('play').addEventListener('click', async () => {
+      try { await audio.play(); statusEl.textContent = '재생 중'; }
+      catch { statusEl.textContent = '재생 실패(첫 상호작용 필요/파일 없음)'; }
+    });
+    document.getElementById('pause').addEventListener('click', () => {
+      audio.pause(); statusEl.textContent = '일시정지';
+    });
+    document.addEventListener('pointerdown', async () => {
+      if (audio.paused) { try { await audio.play(); statusEl.textContent = '재생 중'; } catch {} }
+    }, { once: true });
+
+    // ===== 꽃잎 생성 =====
+    const petalsLayer = document.querySelector('.petals');
+    const PETAL_COUNT = 18; // 개수 조절 가능(10~30 추천)
+
+    // 랜덤 유틸
+    const rnd = (min, max) => Math.random() * (max - min) + min;
+
+    for (let i = 0; i < PETAL_COUNT; i++) {
+      const p = document.createElement('span');
+      p.className = 'petal';
+
+      // CSS 커스텀 속성으로 각 꽃잎의 움직임을 다르게
+      p.style.left       = rnd(0, 100) + 'vw';
+      p.style.setProperty('--fall-dur',  rnd(6, 12) + 's');
+      p.style.setProperty('--fall-delay', rnd(-6, 0) + 's');
+      p.style.setProperty('--sway-dur',  rnd(2.5, 5) + 's');
+      p.style.setProperty('--sway-delay', rnd(0, 2) + 's');
+      p.style.setProperty('--sway-x',    rnd(18, 42) + 'px');
+      p.style.setProperty('--rot',       rnd(-40, 40) + 'deg');
+
+      petalsLayer.appendChild(p);
+    }
+  </script>
+</body>
+</html>
