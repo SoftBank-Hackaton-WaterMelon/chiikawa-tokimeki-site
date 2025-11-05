@@ -31,7 +31,7 @@
     h1 { margin: 0 0 6px; font-weight: 900; }
     p { margin: 0 0 14px; opacity: .95; }
 
-    /* 흔들리는 콘페티(배경) */
+    /* 살짝 흔들리는 콘페티(배경) */
     .confetti {
       position: absolute; inset: 0; pointer-events: none; opacity: .8;
       background-image:
@@ -77,34 +77,6 @@
       transition: background-position .1s ease;
     }
 
-    /* 꽃잎 */
-    .petals { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
-    .petal {
-      position: absolute; top: -10vh; z-index: 2;
-      width: 14px; height: 12px;
-      background: radial-gradient(ellipse at 60% 40%, #f9a8d4 0%, #f472b6 60%, #ec4899 100%);
-      border-radius: 60% 60% 60% 60% / 70% 70% 40% 40%;
-      opacity: .95;
-      filter: drop-shadow(0 4px 6px rgba(236,72,153,.35));
-      transform: rotate(var(--rot));
-      animation: fall linear var(--fall-dur) var(--fall-delay) both,
-                 sway ease-in-out var(--sway-dur) var(--sway-delay) infinite alternate;
-    }
-    .petal::after{
-      content:"";
-      position:absolute; inset: 2px 4px auto auto;
-      width: 6px; height: 4px; border-radius: 50%;
-      background: rgba(255,255,255,.55);
-      transform: rotate(-20deg);
-    }
-    @keyframes fall {
-      to { transform: translateY(110vh) rotate(calc(var(--rot) + 160deg)); }
-    }
-    @keyframes sway {
-      from { translate: 0 0; }
-      to   { translate: var(--sway-x, 32px) 8px; }
-    }
-
     /* 메인 이미지 */
     .img {
       position: relative; z-index: 1;
@@ -119,7 +91,6 @@
       75%  { transform: translateY(-6px) rotate(2deg) scale(1.02); }
       100% { transform: translateY(0) rotate(0deg) scale(1.00); }
     }
-    .party .img { animation-duration: .9s; } /* 파티 모드 가속 */
 
     /* 자막 */
     .subtitle {
@@ -134,15 +105,32 @@
       backdrop-filter: blur(4px);
     }
 
-    /* 비주얼라이저 */
-    #viz {
-      position:absolute; left:0; right:0; bottom:0; height:54px; z-index:1;
-      opacity:.9; mix-blend-mode:screen;
+    /* 꽃잎 */
+    .petals { pointer-events:none; position:absolute; inset:0; overflow:hidden; z-index:2; }
+    .petal {
+      position: absolute; top: -10vh;
+      width: 14px; height: 12px;
+      background: radial-gradient(ellipse at 60% 40%, #f9a8d4 0%, #f472b6 60%, #ec4899 100%);
+      border-radius: 60% 60% 60% 60% / 70% 70% 40% 40%;
+      opacity:.95;
+      filter: drop-shadow(0 4px 6px rgba(236,72,153,.35));
+      transform: rotate(var(--rot));
+      animation: fall linear var(--fall-dur) var(--fall-delay) both,
+                 sway ease-in-out var(--sway-dur) var(--sway-delay) infinite alternate;
     }
+    .petal::after{
+      content:"";
+      position:absolute; inset: 2px 4px auto auto;
+      width: 6px; height: 4px; border-radius: 50%;
+      background: rgba(255,255,255,.55);
+      transform: rotate(-20deg);
+    }
+    @keyframes fall { to { transform: translateY(110vh) rotate(calc(var(--rot) + 160deg)); } }
+    @keyframes sway { from { translate: 0 0; } to { translate: var(--sway-x, 32px) 8px; } }
 
     /* 모션 최소화 */
     @media (prefers-reduced-motion: reduce) {
-      .img, .confetti, .petal, .stage::before { animation: none !important; }
+      .img, .confetti, .stage::before, .petal { animation: none !important; }
     }
 
     .controls { margin-top: 14px; display: grid; gap: 10px; justify-content: center; }
@@ -160,13 +148,12 @@
     .chip { background: rgba(34,211,238,.18); color:#fff; border-color: rgba(255,255,255,.28); }
 
     .footer { opacity:.9; font-size:.9rem; margin-top:6px; }
-
   </style>
 </head>
 <body>
   <main class="card" id="root">
     <div class="confetti" aria-hidden="true"></div>
-    <h1>ちいかわ、わくわくな一日！ 🎉</h1>
+    <h1>ちいかわ、わくわくな一日! 🎉</h1>
 
     <div class="stage-wrap">
       <div class="stage" id="stage" aria-label="춤추는 치이카와 이미지">
@@ -181,13 +168,8 @@
           src="assets/dance.gif"
           alt="ちいかわ、わくわくな一日！"
           loading="eager"
-          onerror="this.onerror=null;
-               this.src='assets/dance.jpg';
-               this.onerror=function(){ this.src='assets/dance.png'; };"
+          onerror="this.onerror=null; this.src='assets/dance.jpg'; this.onerror=function(){ this.src='assets/dance.png'; };"
         />
-
-        <!-- 비주얼라이저 캔버스 -->
-        <canvas id="viz" width="1200" height="200" aria-hidden="true"></canvas>
 
         <!-- 자막 (순환) -->
         <span class="subtitle" id="subtitle" aria-live="polite">今日はじしんをもって！ ✨</span>
@@ -198,7 +180,6 @@
       <div class="rows">
         <button id="play" aria-label="배경음악 재생">▶ 음악 켜기</button>
         <button id="pause" aria-label="배경음악 일시정지">⏸ 일시정지</button>
-        <button id="toggleParty" class="chip" aria-pressed="false">🎈 파티 모드</button>
         <button id="togglePetals" class="chip" aria-pressed="true">🌸 꽃비 ON</button>
       </div>
 
@@ -229,20 +210,16 @@
     const playBtn  = document.getElementById('play');
     const pauseBtn = document.getElementById('pause');
     const stage    = document.getElementById('stage');
-    const petalsLayer = document.querySelector('.petals');
-    const togglePartyBtn = document.getElementById('toggleParty');
-    const togglePetalsBtn= document.getElementById('togglePetals');
     const subtitle = document.getElementById('subtitle');
     const spot     = document.querySelector('.spot');
-    const root     = document.getElementById('root');
+    const petalsLayer = document.querySelector('.petals');
+    const togglePetalsBtn = document.getElementById('togglePetals');
 
-    // ===== 기본 상태 & 로컬 저장 =====
-    const saved = JSON.parse(localStorage.getItem('chii:state') || '{}');
+    // ===== 상태 복원 =====
+    const saved = JSON.parse(localStorage.getItem('dance:state') || '{}');
     audio.volume = saved.volume ?? 0.8;
     vol.value = audio.volume;
-    let party = !!saved.party;
-    document.body.classList.toggle('party', party);
-    togglePartyBtn.setAttribute('aria-pressed', party);
+    let captionIndex = saved.captionIndex ?? 0;
     let petalsOn = saved.petalsOn ?? true;
     togglePetalsBtn.setAttribute('aria-pressed', petalsOn);
     petalsLayer.style.display = petalsOn ? '' : 'none';
@@ -251,19 +228,17 @@
     const updateStatus = (txt) => statusEl.textContent = txt;
 
     playBtn.addEventListener('click', async () => {
-      try { await audio.play(); updateStatus('재생 중'); } 
+      try { await audio.play(); updateStatus('재생 중'); }
       catch { updateStatus('재생 실패(첫 상호작용 필요/파일 없음)'); }
     });
     pauseBtn.addEventListener('click', () => { audio.pause(); updateStatus('일시정지'); });
 
+    // 첫 사용자 제스처 시 자동 언락 시도(모바일 등 대비)
     document.addEventListener('pointerdown', async () => {
       if (audio.paused) { try { await audio.play(); updateStatus('재생 중'); } catch {} }
     }, { once: true });
 
-    vol.addEventListener('input', () => {
-      audio.volume = Number(vol.value);
-      persist();
-    });
+    vol.addEventListener('input', () => { audio.volume = Number(vol.value); persist(); });
 
     audio.addEventListener('timeupdate', () => {
       if (audio.duration) seek.value = Math.floor((audio.currentTime / audio.duration) * 1000);
@@ -281,45 +256,6 @@
       if (e.code === 'ArrowUp')    { audio.volume = Math.min(1, audio.volume + 0.05); vol.value = audio.volume; persist(); }
       if (e.code === 'ArrowDown')  { audio.volume = Math.max(0, audio.volume - 0.05); vol.value = audio.volume; persist(); }
     });
-
-    // ===== 파티 모드 / 꽃잎 토글 =====
-    togglePartyBtn.addEventListener('click', () => {
-      party = !party;
-      document.body.classList.toggle('party', party);
-      togglePartyBtn.setAttribute('aria-pressed', party);
-      PETAL_COUNT = party ? 28 : 16;
-      spawnPetals(true);
-      persist();
-    });
-
-    togglePetalsBtn.addEventListener('click', () => {
-      petalsOn = !petalsOn;
-      togglePetalsBtn.setAttribute('aria-pressed', petalsOn);
-      petalsLayer.style.display = petalsOn ? '' : 'none';
-      persist();
-    });
-
-    // ===== 꽃잎 생성 =====
-    const rnd = (min, max) => Math.random() * (max - min) + min;
-    let PETAL_COUNT = party ? 28 : 16;
-
-    function spawnPetals(reset=false){
-      if (reset) petalsLayer.innerHTML = '';
-      for (let i = 0; i < PETAL_COUNT; i++) {
-        const p = document.createElement('span');
-        p.className = 'petal';
-        p.style.left = rnd(0, 100) + 'vw';
-        const speed = party ? rnd(5, 10) : rnd(7, 13);
-        p.style.setProperty('--fall-dur',  speed + 's');
-        p.style.setProperty('--fall-delay', rnd(-speed, 0) + 's');
-        p.style.setProperty('--sway-dur',  rnd(2.4, 5.0) + 's');
-        p.style.setProperty('--sway-delay', rnd(0, 2) + 's');
-        p.style.setProperty('--sway-x',    rnd(18, 44) + 'px');
-        p.style.setProperty('--rot',       rnd(-40, 40) + 'deg');
-        petalsLayer.appendChild(p);
-      }
-    }
-    spawnPetals();
 
     // ===== 마우스 스포트라이트 & 틸트 =====
     stage.addEventListener('pointermove', (e) => {
@@ -345,67 +281,51 @@
       "自分を信じて、ファイト！ 💪",
       "작은 한 걸음, 큰 기쁨 ✨"
     ];
-    let li = saved.subtitleIndex ?? 0;
     function rotateSubtitle(){
-      li = (li + 1) % lines.length;
-      subtitle.textContent = lines[li];
+      captionIndex = (captionIndex + 1) % lines.length;
+      subtitle.textContent = lines[captionIndex];
       persist();
     }
     setInterval(rotateSubtitle, 3200);
 
-    // ===== 웹오디오 비주얼라이저 =====
-    const canvas = document.getElementById('viz');
-    const ctx = canvas.getContext('2d');
-    let audioCtx, analyser, src, dataArray;
+    // ===== 꽃잎 토글 & 생성 =====
+    togglePetalsBtn.addEventListener('click', () => {
+      petalsOn = !petalsOn;
+      togglePetalsBtn.setAttribute('aria-pressed', petalsOn);
+      petalsLayer.style.display = petalsOn ? '' : 'none';
+      persist();
+    });
 
-    function setupAudioGraph(){
-      if (audioCtx) return;
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      dataArray = new Uint8Array(analyser.frequencyBinCount);
-      src = audioCtx.createMediaElementSource(audio);
-      src.connect(analyser);
-      analyser.connect(audioCtx.destination);
-      drawViz();
-    }
+    const rnd = (min, max) => Math.random() * (max - min) + min;
+    const PETAL_COUNT = 20;
 
-    function drawViz(){
-      requestAnimationFrame(drawViz);
-      if (!analyser) return;
-      analyser.getByteFrequencyData(dataArray);
-      const w = canvas.width = canvas.clientWidth * devicePixelRatio;
-      const h = canvas.height = 100 * devicePixelRatio;
-      const barW = Math.max(2, Math.floor(w / dataArray.length));
-      ctx.clearRect(0,0,w,h);
-      for (let i=0;i<dataArray.length;i++){
-        const v = dataArray[i]/255;
-        const barH = v * h;
-        const x = i * barW;
-        const y = h - barH;
-        // 밝은 그라데이션(섞임 모드 screen)
-        const grad = ctx.createLinearGradient(0,y,0,h);
-        grad.addColorStop(0, 'rgba(34,211,238,.95)');
-        grad.addColorStop(1, 'rgba(236,72,153,.85)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, y, barW*0.8, barH);
+    function spawnPetals(){
+      petalsLayer.innerHTML = '';
+      for (let i = 0; i < PETAL_COUNT; i++) {
+        const p = document.createElement('span');
+        p.className = 'petal';
+        p.style.left = rnd(0, 100) + 'vw';
+        const speed = rnd(7, 13);
+        p.style.setProperty('--fall-dur',  speed + 's');
+        p.style.setProperty('--fall-delay', rnd(-speed, 0) + 's');
+        p.style.setProperty('--sway-dur',  rnd(2.4, 5.0) + 's');
+        p.style.setProperty('--sway-delay', rnd(0, 2) + 's');
+        p.style.setProperty('--sway-x',    rnd(18, 44) + 'px');
+        p.style.setProperty('--rot',       rnd(-40, 40) + 'deg');
+        petalsLayer.appendChild(p);
       }
     }
-
-    // 첫 재생 시 오디오 그래프 init
-    audio.addEventListener('play', () => { try { setupAudioGraph(); audioCtx && audioCtx.resume(); } catch {} });
+    spawnPetals();
 
     // ===== 상태 저장 =====
     function persist(){
-      localStorage.setItem('chii:state', JSON.stringify({
+      localStorage.setItem('dance:state', JSON.stringify({
         volume: audio.volume,
-        party,
-        petalsOn,
-        subtitleIndex: li
+        captionIndex,
+        petalsOn
       }));
     }
 
-    // 초기 접근성 상태 표시
     audio.addEventListener('play',  () => updateStatus('재생 중'));
     audio.addEventListener('pause', () => updateStatus('일시정지'));
     audio.addEventListener('ended', () => updateStatus('정지됨'));

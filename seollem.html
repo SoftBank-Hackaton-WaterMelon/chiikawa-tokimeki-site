@@ -74,32 +74,9 @@
       user-select: none;
     }
 
-    /* 꽃잎 */
-    .petals { pointer-events:none; position:absolute; inset:0; overflow:hidden; z-index:1; }
-    .petal {
-      position: absolute; top: -10vh;
-      width: 14px; height: 12px;
-      background: radial-gradient(ellipse at 60% 40%, #f9a8d4 0%, #f472b6 60%, #ec4899 100%);
-      border-radius: 60% 60% 60% 60% / 70% 70% 40% 40%;
-      opacity:.92;
-      filter: drop-shadow(0 4px 6px rgba(219,39,119,.25));
-      transform: rotate(var(--rot));
-      animation: fall linear var(--fall-dur) var(--fall-delay) both,
-                 sway ease-in-out var(--sway-dur) var(--sway-delay) infinite alternate;
-    }
-    .petal::after{
-      content:"";
-      position:absolute; inset: 2px 4px auto auto;
-      width: 6px; height: 4px; border-radius: 50%;
-      background: rgba(255,255,255,.55);
-      transform: rotate(-20deg);
-    }
-    @keyframes fall { to { transform: translateY(110vh) rotate(calc(var(--rot) + 160deg)); } }
-    @keyframes sway { from { translate: 0 0; } to { translate: var(--sway-x, 30px) 6px; } }
-
     /* 모션 최소화 */
     @media (prefers-reduced-motion: reduce) {
-      .petal, .frame::before { animation: none !important; }
+      .frame::before { animation: none !important; }
     }
 
     /* 컨트롤 */
@@ -131,9 +108,6 @@
       <div class="frame" id="frame" aria-label="설레는 치이카와 이미지">
         <div class="spot" aria-hidden="true"></div>
 
-        <!-- 꽃잎 -->
-        <div class="petals" aria-hidden="true"></div>
-
         <!-- 메인 이미지 -->
         <img
           class="img"
@@ -151,7 +125,6 @@
       <div class="rows">
         <button id="play" aria-label="배경음악 재생">▶ 음악 켜기</button>
         <button id="pause" aria-label="배경음악 일시정지">⏸ 일시정지</button>
-        <button id="togglePetals" class="chip" aria-pressed="true">🌸 꽃비 ON</button>
       </div>
 
       <input id="seek" type="range" min="0" max="1000" value="0" aria-label="재생 위치" />
@@ -180,8 +153,6 @@
     const vol = document.getElementById('vol');
     const playBtn = document.getElementById('play');
     const pauseBtn = document.getElementById('pause');
-    const togglePetalsBtn = document.getElementById('togglePetals');
-    const petalsLayer = document.querySelector('.petals');
     const subtitle = document.getElementById('subtitle');
     const frame = document.getElementById('frame');
     const spot = document.querySelector('.spot');
@@ -190,9 +161,6 @@
     const saved = JSON.parse(localStorage.getItem('seollem:state') || '{}');
     audio.volume = saved.volume ?? 0.8;
     vol.value = audio.volume;
-    let petalsOn = saved.petalsOn ?? true;
-    togglePetalsBtn.setAttribute('aria-pressed', petalsOn);
-    petalsLayer.style.display = petalsOn ? '' : 'none';
     let captionIndex = saved.captionIndex ?? 0;
 
     // ===== 오디오 제어 =====
@@ -227,36 +195,6 @@
       if (e.code === 'ArrowDown')  { audio.volume = Math.max(0, audio.volume - 0.05); vol.value = audio.volume; persist(); }
     });
 
-    // ===== 꽃잎 토글 =====
-    togglePetalsBtn.addEventListener('click', () => {
-      petalsOn = !petalsOn;
-      togglePetalsBtn.setAttribute('aria-pressed', petalsOn);
-      petalsLayer.style.display = petalsOn ? '' : 'none';
-      persist();
-    });
-
-    // ===== 꽃잎 생성 =====
-    const rnd = (min, max) => Math.random() * (max - min) + min;
-    let PETAL_COUNT = 18;
-
-    function spawnPetals(){
-      petalsLayer.innerHTML = '';
-      for (let i = 0; i < PETAL_COUNT; i++) {
-        const p = document.createElement('span');
-        p.className = 'petal';
-        p.style.left = rnd(0, 100) + 'vw';
-        const speed = rnd(6, 12);
-        p.style.setProperty('--fall-dur',  speed + 's');
-        p.style.setProperty('--fall-delay', rnd(-speed, 0) + 's');
-        p.style.setProperty('--sway-dur',  rnd(2.4, 5.0) + 's');
-        p.style.setProperty('--sway-delay', rnd(0, 2) + 's');
-        p.style.setProperty('--sway-x',    rnd(18, 42) + 'px');
-        p.style.setProperty('--rot',       rnd(-40, 40) + 'deg');
-        petalsLayer.appendChild(p);
-      }
-    }
-    spawnPetals();
-
     // ===== 스포트라이트(마우스) =====
     frame.addEventListener('pointermove', (e) => {
       const rect = frame.getBoundingClientRect();
@@ -285,7 +223,6 @@
     function persist(){
       localStorage.setItem('seollem:state', JSON.stringify({
         volume: audio.volume,
-        petalsOn,
         captionIndex
       }));
     }
